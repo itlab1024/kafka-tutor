@@ -1,12 +1,12 @@
 # Kafka [Kraft模式]教程（一）
 
-# 说明
+## 说明
 
 Kafka版本：3.3.1
 
 Kraft模式！
 
-# 准备三台服务器
+## 准备三台服务器
 我是通过`vagrant`搭配`virtualbox`创建的虚拟机。
 vagrant的Vagrantfile文件内容如下：
 ```text
@@ -46,7 +46,7 @@ end
 
 
 
-# Host配置
+## Host配置
 修改`/etc/hosts`,配置hosts，保证服务器之间能够通过hostname通信。
 ```text
 192.168.10.11 kraft1
@@ -54,17 +54,17 @@ end
 192.168.10.13 kraft3
 ```
 
-# JDK安装
+## JDK安装
 kafka的运行依赖JDK（要求JDK8+），三个服务器都安装JDK
 ```shell
 [vagrant@kraft1 ~]$ sudo yum install java-17-openjdk -y
 [vagrant@kraft2 ~]$ sudo yum install java-17-openjdk -y
 [vagrant@kraft3 ~]$ sudo yum install java-17-openjdk -y
 ```
-# 下载kafka
+## 下载kafka
 [kafka3.3.1下载地址](https://downloads.apache.org/kafka/3.3.1/kafka_2.13-3.3.1.tgz)
 下载完毕后，上传到三台服务器上，然后解压。
-# 配置修改
+## 配置修改
 修改kafka目录下的`config/kraft/server.properties`文件。三个服务器都需要修改。
 特别注意：每个服务器（broker）上的配置里的node.id必须是数字，并且不能重复。
 ```properties
@@ -226,7 +226,7 @@ node.id=3
 * `controller.quorum.voters=1@kraft1:9093,2@kraft2:9093,3@kraft3:9093`【以逗号分隔的`{id}@{host}:{port}`投票者列表。例如：`1@localhost:9092,2@localhost:9093,3@localhost:9094`】
 * `log.dirs=/home/vagrant/kraft-combined-logs`【日志路径，默认是`/temp`下的文件下，生产环境不要使用，因为`linux`会清理`/tmp`目录下的文件，会造成数据丢失】
 
-# 生成集群ID
+## 生成集群ID
 随便找一个服务器，进入kafka目录，使用`kafka-storage.sh`生成一个uuid，一个集群只能有一个uuid！！！
 ```shell
 [vagrant@kraft1 kafka_2.13-3.3.1]$ KAFKA_CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)"
@@ -234,7 +234,7 @@ node.id=3
 t6vWCV2iRneJB62NXxO19g
 ```
 这个ID就可以作为集群的ID
-# 格式化存储目录
+## 格式化存储目录
 三个机器上都需要执行
 ```shell
 # kraft1服务器
@@ -247,7 +247,7 @@ Formatting /home/vagrant/kraft-combined-logs with metadata.version 3.3-IV3.
 [vagrant@kraft3 kafka_2.13-3.3.1]$ bin/kafka-storage.sh format -t t6vWCV2iRneJB62NXxO19g -c config/kraft/server.properties
 Formatting /home/vagrant/kraft-combined-logs with metadata.version 3.3-IV3.
 ```
-# 启动服务器
+## 启动服务器
 三个机器都需要执行
 ```shell
 # kraft1服务器
@@ -258,7 +258,7 @@ Formatting /home/vagrant/kraft-combined-logs with metadata.version 3.3-IV3.
 [vagrant@kraft3 kafka_2.13-3.3.1]$  bin/kafka-server-start.sh -daemon  config/kraft/server.properties
 ```
 
-# 查看元数据（Metadata）
+## 查看元数据（Metadata）
 ```shell
 [vagrant@kraft1 kafka_2.13-3.3.1]$ bin/kafka-metadata-shell.sh  --snapshot /home/vagrant/kraft-combined-logs/__cluster_metadata-0/00000000000000000000.log
 Loading...
@@ -289,14 +289,14 @@ leader  offset
 
 > **这里报了个错，不知道具体原因，目前不影响使用，暂时忽略（之后确定下）！**
 
-# 创建主题
+## 创建主题
 我创建一个3副本、3分区的主题（itlab1024-topic1）。
 ```shell
 [vagrant@kraft1 kafka_2.13-3.3.1]$ bin/kafka-topics.sh --create --topic itlab1024-topic1 --partitions 3 --replication-fa
 ctor 3  --bootstrap-server kraft1:9092,kraft2:9092,kraft3:9092
 Created topic itlab1024-topic1.
 ```
-# 查看主题
+## 查看主题
 ```shell
 [vagrant@kraft1 kafka_2.13-3.3.1]$ bin/kafka-topics.sh --describe --topic itlab1024-topic1 --bootstrap-server kraft1:909
 2,kraft2:9092,kraft3:9092
@@ -305,7 +305,7 @@ Topic: itlab1024-topic1 TopicId: li_8Jn_USOeF-HIAZdDZKA PartitionCount: 3       
         Topic: itlab1024-topic1 Partition: 1    Leader: 3       Replicas: 3,1,2 Isr: 3,1,2
         Topic: itlab1024-topic1 Partition: 2    Leader: 1       Replicas: 1,2,3 Isr: 1,2,3
 ```
-# 再次查看元数据(Metadata)
+## 再次查看元数据(Metadata)
 ```shell
 [vagrant@kraft1 kafka_2.13-3.3.1]$ bin/kafka-metadata-shell.sh  --snapshot /home/vagrant/kraft-combined-logs/__cluster_m
 etadata-0/00000000000000000000.log
@@ -327,14 +327,14 @@ brokers  features  local  metadataQuorum  topicIds  topics
 ```
 可以看到，一级目录多了`topicIds`和`topics`。
 
-# 生产消息
+## 生产消息
 ```shell
 [vagrant@kraft1 kafka_2.13-3.3.1]$ bin/kafka-console-producer.sh --topic itlab1024-topic1 --bootstrap-server kraft1:9092
 ,kraft2:9092,kraft3:9092
 >1
 >2
 ```
-# 消费消息
+## 消费消息
 上面发送了1和2两个消息，看看能否消费到。
 ```shell
 [vagrant@kraft1 kafka_2.13-3.3.1]$ bin/kafka-console-consumer.sh --topic itlab1024-topic1 --bootstrap-server kraft1:9092,kraft2:9092,kraft3:9092 --from-beginning
@@ -342,9 +342,9 @@ brokers  features  local  metadataQuorum  topicIds  topics
 2
 ```
 没问题，正常消费。
-# Api使用
+## Api使用
 使用Java程序，来生产和消费消息。
-## 建立Maven项目并引入依赖
+### 建立Maven项目并引入依赖
 ```xml
 <dependency>
 	<groupId>org.apache.kafka</groupId>
@@ -352,7 +352,7 @@ brokers  features  local  metadataQuorum  topicIds  topics
 	<version>3.3.1</version>
 </dependency>
 ```
-## 创建消费者类
+### 创建消费者类
 ```shell
 package com.itlab1024.kafka;
 
@@ -386,7 +386,7 @@ public class ConsumerClient {
     }
 }
 ```
-## 创建生产者类
+### 创建生产者类
 ```shell
 package com.itlab1024.kafka;
 
@@ -437,9 +437,84 @@ offset = 4, key = itlab9, value = itlab9
 
 
 
+# Kafka [Kraft模式]教程（二）
+
+## 基本解释
+
+在教程一中创建了一个基础的Kafka Raft模式集群，但是并没有细讲该模式的具体细节，本文章来讲解下，我尽可能讲解的很清晰。
+
+在kafka中节点服务器主要有两种角色，一种是`controller`，一种是`broker`，`zookeeper`和`raft`模式下都是这两种角色，不同的是`zookeeper`模式下的`controller`强依赖于`zookeeper`，`zookeeper`中存储了集群的元数据信息。
+
+但是依赖于`zookeeper`有很多问题：
+
+* 首先使用`zookeeper`则多了一个组件，运维成本高
+* `zookeeper`符合`CAP`悖论中的`CP`,也就是说`zookeeper`是强一致性的组件。那么如果集群中某个节点数据变更，就得通知其他节点同步，并且要超过半数完成才行，当节点较多的时候，性能下降明显。
+* `zookeeper`的设计决定了它只适用于存储一些简单的配置或者是集群的元数据，数据量大的时候性能和稳定性就会下降，一些监听器也会延时甚至丢失。
+* `zookeeper`本身也是分布式系统，主从结构，如果主节点挂掉，也会选举出来主节点，他的选举并不快，并且选举的时候是不能提供服务的。
+
+那么`Raft`模式，弃用`zookeeper`后，controller中的信息就不会存储到`zookeeper`中了（`zookeeper`都没了）,而是存储到了kafka自己的服务器上。
+
+通过一张图来看下变化前后的区别（图片来源网络）：
+
+![](https://itlab1024-1256529903.cos.ap-beijing.myqcloud.com/202212301051680.png)
+
+用`Quorum Controller`代替之前的`Controller`，`Quorum`中每个`Controller`节点都会保存所有元数据，通过`KRaft`协议保证副本的一致性。这样即使`Quorum Controller`节点出故障了，新的`Controller`迁移也会非常快。
+
+
+
+在`Kraft`模式下，只有一小组专门选择的服务器可以充当控制器（设置`process.roles`包含`controller`）,controller服务器的作用是参与元数据的仲裁。
+
+多个`controller`服务器只有一个是`active`状态的，其他的都是`standby`状态的（也就是备用服务器）。
+
+`controler` 服务器的数量遵循Quorum原则（过半原则），也就是说要奇数个，比如3个服务器允许1个故障，5个服务器允许2个故障。
+
+## 配置说明
+
+`kraft`模式下的配置文件在`config/kraft`目录下。
+
+```shell
+[vagrant@kraft3 kraft]$ pwd
+/home/vagrant/kafka_2.13-3.3.1/config/kraft
+[vagrant@kraft3 kraft]$ ls
+broker.properties  controller.properties  README.md  server.properties
+```
+
+这里有三个`properties`文件，三个文件中内容基本相同，唯一不同的是`process.roles`的配置。
+
+* `broker.properties`：`process.roles=broker`，代表该服务器只是`broker`角色。
+* `controller.properties`：`process.roles=controller`，代表该服务器只是`controller`角色。
+* `server.properties`:`process.roles=broker,controller`，代表该服务器既是`broker`角色也是`controller`角色。
+
+kafka只是给我们提供了三个不同角色的配置文件，方便我们使用而已。
+
+文件中的具体配置内容，才是我们应该重视的，接下来一个一个说明，并尝试修改默认配置进行试验！
+
+---
+
+
+
+### process.roles
+
+用于配置服务器的角色，可以有如下配置。
+
+* `process.roles=broker`，代表该服务器只是`broker`角色。
+* `process.roles=controller`，代表该服务器只是`controller`角色。
+* `process.roles=broker,controller`，代表该服务器既是`broker`角色也是`controller`角色。
+
+也可以不配置，如果不配置，则说明当前集群不是kraft模式，而是`zookeeper`模式。
+
+说明：目前还不支持两种模式自由切换（以后是否支持也不清楚），如果要切换模式，比如重新使用`bin/kafka-storage.sh`重新格式化（重新格式化数据肯定会丢失的，特别注意！）
+
+同时具有`broker`和`controller`两种角色的服务器（也叫组合服务器）在开发环境中是很好的（服务器可能较少，搭建方便），但是在生产环境中是不推荐的，因为这样做会导致`broker`和`controller`的隔离性差，不可能在组合模式下单独滚动或缩放`controller`与`broker`。
+
+**试验**：
+
+考虑我之前搭建的集群，三台机器都是配置的`process.roles=broker,controller`，这是不好的！
+
+
+
 # 博主信息
 
 个人主页：https://itlab1024.com
 
 Github：https://github.com/itlab1024
-
